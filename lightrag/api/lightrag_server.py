@@ -52,6 +52,7 @@ from lightrag.api.routers.document_routes import (
 from lightrag.api.routers.query_routes import create_query_routes
 from lightrag.api.routers.graph_routes import create_graph_routes
 from lightrag.api.routers.ollama_api import OllamaAPI
+from lightrag.api.routers.workspace_workspace import create_workspace_routes
 
 from lightrag.utils import logger, set_verbose_debug
 from lightrag.kg.shared_storage import (
@@ -63,6 +64,7 @@ from lightrag.kg.shared_storage import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from lightrag.api.auth import auth_handler
+from lightrag.api.workspace_manager import WorkspaceManager
 
 # use the .env that is inside the current folder
 # allows to use different .env file for each lightrag instance
@@ -1095,7 +1097,29 @@ def create_app(args):
         logger.error(f"Failed to initialize LightRAG: {e}")
         raise
 
-    # Add routes
+    storage_config = {
+        "kv_storage": args.kv_storage,
+        "graph_storage": args.graph_storage,
+        "vector_storage": args.vector_storage,
+        "doc_status_storage": args.doc_status_storage,
+    }
+
+    workspace_manager = WorkspaceManager(
+        base_working_dir=str(args.working_dir),
+        default_llm_binding=args.llm_binding,
+        default_embedding_binding=args.embedding_binding,
+        storage_config=storage_config,
+        default_chunk_size=int(args.chunk_size),
+        default_chunk_overlap=int(args.chunk_overlap_size),
+        default_max_async=args.max_async,
+        default_summary_max_tokens=args.summary_max_tokens,
+    )
+
+    app.state.workspace_manager = workspace_manager
+    app.state.default_rag = rag
+
+    app.include_router(create_workspace_routes(workspace_manager, api_key))
+
     app.include_router(
         create_document_routes(
             rag,
