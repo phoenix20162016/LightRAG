@@ -2,7 +2,7 @@
 Workspace management routes for the LightRAG API.
 """
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import Field
 
 from lightrag.api.workspace_manager import WorkspaceManager
@@ -158,7 +158,7 @@ def create_workspace_routes(workspace_manager: WorkspaceManager, api_key: Option
     )
     async def delete_workspace(
         kb_id: str,
-        delete_data: bool = Field(default=True, description="Whether to delete physical data"),
+        delete_data: bool = Query(default=True, description="Whether to delete physical data"),
         wm: WorkspaceManager = Depends(get_workspace_manager_from_app),
     ):
         """Delete a workspace and optionally its physical data"""
